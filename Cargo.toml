@@ -1,0 +1,21 @@
+[workspace]
+members = [
+    "lsp",
+    "orchestrator",
+    "dap",
+    "lsif",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+version = "0.7.0"
+license = "MIT"
+repository = "https://github.com/modelcontextprotocol/rust-sdk"
+homepage = "https://github.com/modelcontextprotocol/rust-sdk"
+description = "Codex MCP workspace"
+authors = ["Codex Team"]
+
+[workspace.dependencies]
+rmcp = { version = "0.7.0" }
+rmcp-macros = { version = "0.7.0" }

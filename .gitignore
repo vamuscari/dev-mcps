@@ -1,0 +1,28 @@
+# OS-specific
+.DS_Store
+Thumbs.db
+
+# Editors/IDE
+.idea/
+.vscode/
+
+# Rust build artifacts
+target/
+**/target/
+
+# Project bins
+bin/
+
+# Coverage & logs
+coverage.*
+*.cover
+*.coverprofile
+*.cov
+cover.out
+*.log
+
+# Node (if used for tooling locally)
+node_modules/
+
+# Codex linked folder (Used Locally for Reference)
+# codex
