@@ -38,6 +38,7 @@ struct Agent {
     reader: Arc<Mutex<FramedRead<tokio::process::ChildStdout, JsonRpcMessageCodec<RawMsg>>>>,
     writer: Arc<Mutex<FramedWrite<tokio::process::ChildStdin, JsonRpcMessageCodec<RawMsg>>>>,
     pending: Arc<Mutex<HashMap<i64, oneshot::Sender<Result<Value, Value>>>>>,
+    last_conversation_id: Mutex<Option<String>>, 
 }
 
 type RawReq = Request<String, Value>;
@@ -99,6 +100,7 @@ impl Manager {
             reader: Arc::new(Mutex::new(reader)),
             writer: Arc::new(Mutex::new(writer)),
             pending: Arc::new(Mutex::new(HashMap::new())),
+            last_conversation_id: Mutex::new(None),
         });
 
         // Initialize MCP handshake
@@ -136,6 +138,14 @@ impl Manager {
         let value = self
             .rpc_call(&agent, "newConversation", params)
             .await?;
+        if let Some(cid) = value
+            .get("conversationId")
+            .and_then(|v| v.as_str())
+            .map(|s| s.to_string())
+            .or_else(|| value.get("conversation_id").and_then(|v| v.as_str()).map(|s| s.to_string()))
+        {
+            *agent.last_conversation_id.lock().await = Some(cid);
+        }
         Ok(value)
     }
 
@@ -145,6 +155,7 @@ impl Manager {
         params: Value,
     ) -> Result<Value> {
         let agent = self.require_agent(agent_id).await?;
+        let params = self.prepare_message_params(&agent, params).await?;
         let value = self
             .rpc_call(&agent, "sendUserMessage", params)
             .await?;
@@ -157,6 +168,7 @@ impl Manager {
         params: Value,
     ) -> Result<Value> {
         let agent = self.require_agent(agent_id).await?;
+        let params = self.prepare_message_params(&agent, params).await?;
         let value = self
             .rpc_call(&agent, "sendUserTurn", params)
             .await?;
@@ -169,10 +181,78 @@ impl Manager {
         params: Value,
     ) -> Result<Value> {
         let agent = self.require_agent(agent_id).await?;
+        let mut params = params;
+        if !params.get("conversationId").is_some() && !params.get("conversation_id").is_some() {
+            if let Some(cid) = agent.last_conversation_id.lock().await.clone() {
+                match &mut params {
+                    Value::Object(map) => {
+                        map.insert("conversationId".to_string(), Value::String(cid));
+                    }
+                    _ => {
+                        params = json!({"conversationId": cid});
+                    }
+                }
+            }
+        }
         let value = self
             .rpc_call(&agent, "interruptConversation", params)
             .await?;
         Ok(value)
+    }
+
+    async fn prepare_message_params(&self, agent: &Agent, params: Value) -> Result<Value> {
+        // Normalize params into an object with at least items or text, and ensure conversationId if possible.
+        let mut obj = match params {
+            Value::String(s) => {
+                json!({
+                    "items": [{"type": "text", "text": s}]
+                })
+                .as_object()
+                .cloned()
+                .unwrap()
+            }
+            Value::Object(map) => map,
+            Value::Null => serde_json::Map::new(),
+            other => {
+                // Wrap other scalar/array as a single text item
+                json!({
+                    "items": [{"type": "text", "text": other.to_string()}]
+                })
+                .as_object()
+                .cloned()
+                .unwrap()
+            }
+        };
+
+        // If no items but has text/message/prompt, convert.
+        let has_items = obj.get("items").and_then(|v| v.as_array()).is_some();
+        if !has_items {
+            if let Some(text) = obj
+                .get("text")
+                .and_then(|v| v.as_str())
+                .map(|s| s.to_string())
+                .or_else(|| obj.get("message").and_then(|v| v.as_str()).map(|s| s.to_string()))
+                .or_else(|| obj.get("prompt").and_then(|v| v.as_str()).map(|s| s.to_string()))
+            {
+                obj.remove("text");
+                obj.remove("message");
+                obj.remove("prompt");
+                obj.insert(
+                    "items".to_string(),
+                    json!([{ "type": "text", "text": text }]),
+                );
+            }
+        }
+
+        // Ensure conversationId if we have a remembered one and it's missing.
+        let has_cid = obj.contains_key("conversationId") || obj.contains_key("conversation_id");
+        if !has_cid {
+            if let Some(cid) = agent.last_conversation_id.lock().await.clone() {
+                obj.insert("conversationId".to_string(), Value::String(cid));
+            }
+        }
+
+        Ok(Value::Object(obj))
     }
 
     async fn require_agent(&self, agent_id: &str) -> Result<Arc<Agent>> {
