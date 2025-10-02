@@ -1,4 +1,4 @@
-# codex-lsif
+# mcp-lsif
 
 Minimal MCP/JSON-RPC server dedicated to LSIF (Language Server Index Format). It exposes a small set of LSIF-backed tools over stdin/stdout framing.
 
@@ -15,8 +15,8 @@ Minimal MCP/JSON-RPC server dedicated to LSIF (Language Server Index Format). It
   - `shutdown` → returns null; `exit` notification expected by host
 
 Build, run, test:
-- Build: `cargo build -p codex-lsif`
-- Run: `cargo run -p codex-lsif`
-- Test: `cargo test -p codex-lsif`
+- Build: `cargo build -p mcp-lsif`
+- Run: `cargo run -p mcp-lsif`
+- Test: `cargo test -p mcp-lsif`
 
 Communication uses MCP-standard Content-Length framing over stdin/stdout.

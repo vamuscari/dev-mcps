@@ -9,12 +9,16 @@ mod protocol_types;
 #[tokio::main]
 async fn main() -> Result<()> {
     // Initialize logging (env: RUST_LOG=info,debug,trace)
+    let fmt_layer = tracing_subscriber::fmt::layer()
+        .with_ansi(false)
+        .with_writer(std::io::stderr);
+
     tracing_subscriber::registry()
         .with(
             EnvFilter::try_from_default_env()
                 .unwrap_or_else(|_| "info,codex_orchestrator=debug".into()),
         )
-        .with(tracing_subscriber::fmt::layer().with_ansi(false))
+        .with(fmt_layer)
         .init();
 
     tracing::info!("Starting codex-orchestrator MCP server");

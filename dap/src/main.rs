@@ -1,60 +1,12 @@
 mod da;
+mod mcp;
 
 use anyhow::Result;
 use da::DapAdapterManager;
-use rmcp::{
-    model::{
-        CallToolRequestParam, CallToolResult, ErrorData, JsonObject, ListToolsResult,
-        PaginatedRequestParam, ServerCapabilities, ServerInfo, Tool as McpTool,
-    },
-    service::{RequestContext, RoleServer, ServiceExt},
-    ServerHandler,
-};
+use rmcp::model::{CallToolResult, ErrorData, JsonObject, Tool as McpTool};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::sync::Arc;
-
-#[derive(Default, Clone)]
-struct CodexDapServer;
-
-impl ServerHandler for CodexDapServer {
-    fn get_info(&self) -> ServerInfo {
-        server_info()
-    }
-
-    async fn list_tools(
-        &self,
-        _request: Option<PaginatedRequestParam>,
-        _context: RequestContext<RoleServer>,
-    ) -> Result<ListToolsResult, ErrorData> {
-        let tools = tokio::task::spawn_blocking(list_tools_impl)
-            .await
-            .map_err(|e| {
-                ErrorData::internal_error(format!("list tools task panicked: {e}"), None)
-            })??;
-        Ok(ListToolsResult::with_all_items(tools))
-    }
-
-    async fn call_tool(
-        &self,
-        request: CallToolRequestParam,
-        _context: RequestContext<RoleServer>,
-    ) -> Result<CallToolResult, ErrorData> {
-        tokio::task::spawn_blocking(move || call_tool_impl(request))
-            .await
-            .map_err(|e| ErrorData::internal_error(format!("call tool task panicked: {e}"), None))?
-    }
-}
-
-fn server_info() -> ServerInfo {
-    ServerInfo {
-        instructions: Some(
-            "Bridge Debug Adapter Protocol tooling for Codex MCP clients.".to_string(),
-        ),
-        capabilities: ServerCapabilities::builder().enable_tools().build(),
-        ..ServerInfo::default()
-    }
-}
 
 fn schema(value: Value) -> Arc<JsonObject> {
     Arc::new(
@@ -227,58 +179,12 @@ fn filter_tools_by_capabilities(mut all: Vec<McpTool>, caps: Option<Value>) -> V
     all
 }
 
-fn list_tools_impl() -> Result<Vec<McpTool>, ErrorData> {
+fn list_tools_impl(manager: &mut DapAdapterManager) -> Result<Vec<McpTool>, ErrorData> {
     let all = tools();
-    let caps = {
-        let mut manager = DapAdapterManager::new();
-        manager
-            .capabilities(None)
-            .map_err(|e| ErrorData::internal_error(format!("dap init error: {e}"), None))?
-    };
+    let caps = manager
+        .capabilities(None)
+        .map_err(|e| ErrorData::internal_error(format!("dap init error: {e}"), None))?;
     Ok(filter_tools_by_capabilities(all, caps))
-}
-
-fn call_tool_impl(request: CallToolRequestParam) -> Result<CallToolResult, ErrorData> {
-    let CallToolRequestParam { name, arguments } = request;
-    if !name.starts_with("dap_") {
-        return Err(ErrorData::method_not_found::<
-            rmcp::model::CallToolRequestMethod,
-        >());
-    }
-    let args = arguments.unwrap_or_default();
-    let adapter_cmd = args.get("adapterCommand").and_then(|v| v.as_str());
-    let mut manager = DapAdapterManager::new();
-
-    match name.as_ref() {
-        "dap_initialize" => {
-            let res = manager
-                .capabilities(adapter_cmd)
-                .map_err(|e| ErrorData::internal_error(format!("dap init error: {e}"), None))?;
-            Ok(CallToolResult::structured(json!({
-                "tool": "dap_initialize",
-                "status": "ok",
-                "capabilities": res
-            })))
-        }
-        "dap_call" => {
-            let command = args
-                .get("command")
-                .and_then(|v| v.as_str())
-                .ok_or_else(|| {
-                    ErrorData::invalid_params("Missing required field: command", None)
-                })?;
-            let arguments = args.get("arguments").cloned().unwrap_or_else(|| json!({}));
-            let result = manager
-                .request(command, arguments, adapter_cmd)
-                .map_err(|e| ErrorData::internal_error(format!("dap error: {e}"), None))?;
-            Ok(CallToolResult::structured(json!({
-                "tool": "dap_call",
-                "status": "ok",
-                "result": result
-            })))
-        }
-        other => handle_structured_call(other, &args, adapter_cmd, &mut manager),
-    }
 }
 
 fn handle_structured_call(
@@ -431,31 +337,5 @@ fn require_i64(args: &JsonObject, key: &str) -> Result<i64, ErrorData> {
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    let server = CodexDapServer;
-    let running = server.serve(rmcp::transport::stdio()).await?;
-    running.waiting().await?;
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rmcp::model::ErrorCode;
-
-    #[test]
-    fn tools_list_has_schemas() {
-        let items = tools();
-        assert!(!items.is_empty());
-        assert!(items.iter().all(|tool| !tool.input_schema.is_empty()));
-    }
-
-    #[test]
-    fn call_tool_missing_command_errors() {
-        let req = CallToolRequestParam {
-            name: "dap_call".into(),
-            arguments: Some(JsonObject::default()),
-        };
-        let err = call_tool_impl(req).expect_err("expected invalid params");
-        assert_eq!(err.code, ErrorCode::INVALID_PARAMS);
-    }
+    mcp::run().await
 }

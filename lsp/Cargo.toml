@@ -1,5 +1,5 @@
 [package]
-name = "codex-lsp"
+name = "mcp-lsp"
 version = "0.1.0"
 edition = "2021"
 

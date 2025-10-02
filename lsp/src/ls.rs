@@ -32,7 +32,7 @@ impl FramingPreference {
                 }
                 other => {
                     eprintln!(
-                        "codex-lsp: unknown LSP_STDIO_FRAMING value '{}'; falling back to auto",
+                        "mcp-lsp: unknown LSP_STDIO_FRAMING value '{}'; falling back to auto",
                         other
                     );
                     FramingPreference::Auto
@@ -266,47 +266,47 @@ impl LanguageServerManager {
                 let results: Vec<Value> = vec![Value::Null; count];
                 let result = Value::Array(results);
                 eprintln!(
-                    "codex-lsp: auto-responding to server request '{}' with default configuration",
+                    "mcp-lsp: auto-responding to server request '{}' with default configuration",
                     method
                 );
                 self.send_jsonrpc_response(id, result)
             }
             "client/registerCapability" | "client/unregisterCapability" => {
                 eprintln!(
-                    "codex-lsp: acknowledging server request '{}' with null result",
+                    "mcp-lsp: acknowledging server request '{}' with null result",
                     method
                 );
                 self.send_jsonrpc_response(id, Value::Null)
             }
             "window/workDoneProgress/create" | "workspace/workDoneProgress/create" => {
                 eprintln!(
-                    "codex-lsp: acknowledging server request '{}' with null result",
+                    "mcp-lsp: acknowledging server request '{}' with null result",
                     method
                 );
                 self.send_jsonrpc_response(id, Value::Null)
             }
             "workspace/workspaceFolders" => {
                 eprintln!(
-                    "codex-lsp: responding to server request '{}' with no workspace folders",
+                    "mcp-lsp: responding to server request '{}' with no workspace folders",
                     method
                 );
                 self.send_jsonrpc_response(id, Value::Null)
             }
             "workspace/applyEdit" => {
                 eprintln!(
-                    "codex-lsp: rejecting server request '{}' (workspace edits unsupported)",
+                    "mcp-lsp: rejecting server request '{}' (workspace edits unsupported)",
                     method
                 );
                 let result = json!({
                     "applied": false,
-                    "failureReason": "codex-lsp bridge cannot apply workspace edits",
+                    "failureReason": "mcp-lsp bridge cannot apply workspace edits",
                 });
                 self.send_jsonrpc_response(id, result)
             }
             "window/showMessageRequest" => {
                 if let Some(params) = params {
                     if let Some(message) = params.get("message").and_then(|m| m.as_str()) {
-                        eprintln!("codex-lsp: server showMessageRequest -> {message}");
+                        eprintln!("mcp-lsp: server showMessageRequest -> {message}");
                     }
                 }
                 self.send_jsonrpc_response(id, Value::Null)
@@ -317,16 +317,16 @@ impl LanguageServerManager {
             | "workspace/inlayHint/refresh"
             | "workspace/diagnostic/refresh" => {
                 eprintln!(
-                    "codex-lsp: acknowledging server refresh request '{}' with null result",
+                    "mcp-lsp: acknowledging server refresh request '{}' with null result",
                     method
                 );
                 self.send_jsonrpc_response(id, Value::Null)
             }
             _ => {
                 let message =
-                    format!("codex-lsp bridge does not implement client request '{method}'");
+                    format!("mcp-lsp bridge does not implement client request '{method}'");
                 eprintln!(
-                    "codex-lsp: replying to unsupported server request '{}' with MethodNotFound",
+                    "mcp-lsp: replying to unsupported server request '{}' with MethodNotFound",
                     method
                 );
                 self.send_jsonrpc_error(id, -32601, message)
@@ -561,21 +561,21 @@ impl LanguageServerManager {
                             self.handle_server_request(req_id, method_name, value.get("params"))
                         {
                             eprintln!(
-                                "codex-lsp: failed to handle server request '{}' during initialize: {err:#}",
+                                "mcp-lsp: failed to handle server request '{}' during initialize: {err:#}",
                                 method_name
                             );
                         }
                         continue;
                     }
                     eprintln!(
-                        "codex-lsp: dropping notification '{}' received during initialize",
+                        "mcp-lsp: dropping notification '{}' received during initialize",
                         method_name
                     );
                 } else {
                     let payload =
                         serde_json::to_string(&value).unwrap_or_else(|_| "<unserializable>".into());
                     eprintln!(
-                        "codex-lsp: discarding unexpected payload while awaiting initialize response: {}",
+                        "mcp-lsp: discarding unexpected payload while awaiting initialize response: {}",
                         payload
                     );
                 }
@@ -641,7 +641,7 @@ impl LanguageServerManager {
 
         if let Err(err) = self.start_server(&cmd) {
             eprintln!(
-                "codex-lsp: failed to launch language server '{}': {err:#}",
+                "mcp-lsp: failed to launch language server '{}': {err:#}",
                 cmd
             );
             return Err(anyhow!(
@@ -677,7 +677,7 @@ impl LanguageServerManager {
             if value.get("id") == Some(&json!(id)) {
                 if let Some(err) = value.get("error") {
                     let formatted = self.format_lsp_error(method, err, server_cmd);
-                    eprintln!("codex-lsp: {}", formatted);
+                    eprintln!("mcp-lsp: {}", formatted);
                     return Err(formatted);
                 }
                 if let Some(result) = value.get("result") {
@@ -692,14 +692,14 @@ impl LanguageServerManager {
                         self.handle_server_request(req_id, method_name, value.get("params"))
                     {
                         eprintln!(
-                            "codex-lsp: failed to handle server request '{}' while awaiting '{}': {err:#}",
+                            "mcp-lsp: failed to handle server request '{}' while awaiting '{}': {err:#}",
                             method_name, method
                         );
                     }
                     continue;
                 }
                 eprintln!(
-                    "codex-lsp: dropping unsolicited notification '{}' while awaiting '{}'",
+                    "mcp-lsp: dropping unsolicited notification '{}' while awaiting '{}'",
                     method_name, method
                 );
                 continue;
@@ -707,7 +707,7 @@ impl LanguageServerManager {
 
             if let Some(resp_id) = value.get("id") {
                 eprintln!(
-                    "codex-lsp: ignoring response for unexpected id {} while waiting for {}",
+                    "mcp-lsp: ignoring response for unexpected id {} while waiting for {}",
                     resp_id, id
                 );
                 continue;
@@ -715,14 +715,14 @@ impl LanguageServerManager {
 
             if let Some(method_name) = value.get("method").and_then(|m| m.as_str()) {
                 eprintln!(
-                    "codex-lsp: dropping unsolicited notification '{}' while awaiting '{}'",
+                    "mcp-lsp: dropping unsolicited notification '{}' while awaiting '{}'",
                     method_name, method
                 );
             } else {
                 let payload =
                     serde_json::to_string(&value).unwrap_or_else(|_| "<unserializable>".into());
                 eprintln!(
-                    "codex-lsp: dropping unexpected payload while awaiting '{}': {}",
+                    "mcp-lsp: dropping unexpected payload while awaiting '{}': {}",
                     method, payload
                 );
             }

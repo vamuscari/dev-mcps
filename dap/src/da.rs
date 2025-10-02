@@ -85,13 +85,13 @@ impl DapAdapterManager {
 
         // Send initialize request
         let seq = self.alloc_seq();
-        let init = json!({
-            "seq": seq,
-            "type": "request",
-            "command": "initialize",
-            "arguments": {
-                "clientID": "codex-dap",
-                "adapterID": "codex-dap",
+            let init = json!({
+                "seq": seq,
+                "type": "request",
+                "command": "initialize",
+                "arguments": {
+                "clientID": "mcp-dap",
+                "adapterID": "mcp-dap",
                 "pathFormat": "path",
                 "linesStartAt1": true,
                 "columnsStartAt1": true,

@@ -11,7 +11,7 @@ STDOUT_LOG=${STDOUT_LOG:-stdout.log}
 STDERR_LOG=${STDERR_LOG:-stderr.log}
 
 SERVER_BIN=${SERVER_CMD%% *}
-echo "Running codex-lsp against LSP command: $SERVER_CMD" >&2
+echo "Running mcp-lsp against LSP command: $SERVER_CMD" >&2
 if ! command -v "$SERVER_BIN" >/dev/null 2>&1; then
   echo "warning: command not found: $SERVER_BIN" >&2
 else
@@ -21,7 +21,7 @@ fi
 
 set +e
 python3 - "$URI" "$SERVER_CMD_JSON" <<'PY' | \
-  cargo run -p codex-lsp --bin codex-lsp >"$STDOUT_LOG" 2>"$STDERR_LOG"
+  cargo run -p mcp-lsp --bin mcp-lsp >"$STDOUT_LOG" 2>"$STDERR_LOG"
 import json
 import sys
 
@@ -57,17 +57,17 @@ PY
 STATUS=$?
 set -e
 
-echo "codex-lsp exit status: $STATUS"
+echo "mcp-lsp exit status: $STATUS"
 
-echo "--- codex-lsp stdout ($STDOUT_LOG) ---"
+echo "--- mcp-lsp stdout ($STDOUT_LOG) ---"
 cat "$STDOUT_LOG"
 
-echo "--- codex-lsp stderr ($STDERR_LOG) ---" >&2
+echo "--- mcp-lsp stderr ($STDERR_LOG) ---" >&2
 cat "$STDERR_LOG" >&2
 
-if grep -q "codex-lsp:" "$STDERR_LOG"; then
-  echo "Detected codex-lsp error lines:" >&2
-  grep "codex-lsp:" "$STDERR_LOG" >&2
+if grep -q "mcp-lsp:" "$STDERR_LOG"; then
+  echo "Detected mcp-lsp error lines:" >&2
+  grep "mcp-lsp:" "$STDERR_LOG" >&2
 fi
 
 exit "$STATUS"

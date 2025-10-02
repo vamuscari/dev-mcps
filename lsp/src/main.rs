@@ -668,7 +668,7 @@ async fn handle_lsp_call(
                 &e,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool 'lsp_call' failed -> {}", json_data);
+                eprintln!("mcp-lsp: tool 'lsp_call' failed -> {}", json_data);
             }
             let message = format_tool_error_message("lsp_call", Some(&method), &e);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -683,7 +683,7 @@ async fn handle_lsp_call(
                 &err,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool 'lsp_call' failed -> {}", json_data);
+                eprintln!("mcp-lsp: tool 'lsp_call' failed -> {}", json_data);
             }
             let message = format_tool_error_message("lsp_call", Some(&method), &err);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -770,7 +770,7 @@ async fn handle_lsp_notify(
                 &e,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool 'lsp_notify' failed -> {}", json_data);
+                eprintln!("mcp-lsp: tool 'lsp_notify' failed -> {}", json_data);
             }
             let message = format_tool_error_message("lsp_notify", Some(&method), &e);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -785,7 +785,7 @@ async fn handle_lsp_notify(
                 &err,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool 'lsp_notify' failed -> {}", json_data);
+                eprintln!("mcp-lsp: tool 'lsp_notify' failed -> {}", json_data);
             }
             let message = format_tool_error_message("lsp_notify", Some(&method), &err);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -1172,7 +1172,7 @@ impl LanguageServerPool {
         const MAX_INLINE_DOC_BYTES: u64 = 2 * 1024 * 1024;
         if metadata.len() > MAX_INLINE_DOC_BYTES {
             return Err(anyhow!(
-                "Document {} is {} bytes; codex-lsp will not inline files larger than 2 MiB. Provide a smaller file or send the content explicitly via didOpen.",
+                "Document {} is {} bytes; mcp-lsp will not inline files larger than 2 MiB. Provide a smaller file or send the content explicitly via didOpen.",
                 canonical_uri,
                 metadata.len()
             ));
@@ -1224,7 +1224,7 @@ pub(crate) fn tools() -> Vec<Tool> {
     const URI_DESC: &str = "Document URI. Use a file:// URI or absolute path inside the workspace.";
     const POSITION_DESC: &str = "Zero-based position {line, character}.";
     const RANGE_DESC: &str = "Range with zero-based start and end positions.";
-    const SERVER_CMD_DESC: &str = "Optional override for the language server command. When omitted, codex-lsp chooses based on languageId/extension or falls back to LSP_SERVER_CMD.";
+    const SERVER_CMD_DESC: &str = "Optional override for the language server command. When omitted, mcp-lsp chooses based on languageId/extension or falls back to LSP_SERVER_CMD.";
     const SERVER_NOTE: &str =
         "Use `serverCommand` to override the configured language server for a single request.";
 
@@ -2124,7 +2124,7 @@ pub(crate) async fn handle_tools_call(params: Option<Value>) -> JsonRpcResponse 
                 &e,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool '{}' failed -> {}", tool_name, json_data);
+                eprintln!("mcp-lsp: tool '{}' failed -> {}", tool_name, json_data);
             }
             let message = format_tool_error_message(&tool_name, Some(method), &e);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -2139,7 +2139,7 @@ pub(crate) async fn handle_tools_call(params: Option<Value>) -> JsonRpcResponse 
                 &err,
             );
             if let Ok(json_data) = serde_json::to_string(&data) {
-                eprintln!("codex-lsp: tool '{}' failed -> {}", tool_name, json_data);
+                eprintln!("mcp-lsp: tool '{}' failed -> {}", tool_name, json_data);
             }
             let message = format_tool_error_message(&tool_name, Some(method), &err);
             JsonRpcResponse::error(ErrorObject::new(-32050, &message, Some(data)))
@@ -2150,7 +2150,7 @@ pub(crate) async fn handle_tools_call(params: Option<Value>) -> JsonRpcResponse 
 impl Drop for LanguageServerPool {
     fn drop(&mut self) {
         if let Err(err) = self.shutdown_all() {
-            eprintln!("codex-lsp: failed to shut down language servers: {err:#}");
+            eprintln!("mcp-lsp: failed to shut down language servers: {err:#}");
         }
     }
 }

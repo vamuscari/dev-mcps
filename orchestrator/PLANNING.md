@@ -100,7 +100,7 @@ Implementation notes:
 
 Responsibilities:
 
-- Discover Codex binary: `CODEX_BIN` or fallback to `codex`, then `codex-test` via `which`.
+- Discover Codex binary: `CODEX_BIN` or fallback to `codex` via `which`.
 - Spawn `codex mcp` as a child process per agent with stdio pipes.
 - Wrap child pipes with a JSON‑RPC client using `rmcp` framing.
 - Provide typed client calls using `codex_protocol::mcp_protocol`:
@@ -149,7 +149,7 @@ Read loop details:
 ## Process Lifecycle
 
 - Spawn
-  - Resolve `CODEX_BIN` (env) or `which("codex")` → `which("codex-test")` fallback.
+  - Resolve `CODEX_BIN` (env) or `which("codex")` fallback.
   - Spawn `codex mcp`; set working directory if provided.
 
 - Health checks
@@ -202,7 +202,7 @@ Read loop details:
   - `RUST_LOG`: log level (e.g., `info`, `debug`).
 
 - Defaults
-  - Prefer `codex`, fallback to `codex-test`.
+  - Prefer `codex`.
   - Deny approvals by default unless configured.
 
 - Security
@@ -218,7 +218,7 @@ Read loop details:
   - Agent state machine: spawn → active → exit → cleanup.
 
 - Integration tests (hermetic)
-  - Stub Codex MCP server (or `codex-test`) that:
+  - Stub Codex MCP server that:
     - Echoes requests.
     - Emits a `codex/event` notification.
     - Issues an approval request and validates the orchestrator forwards and responds correctly.
@@ -306,7 +306,7 @@ Logging and diagnostics
 - The orchestrator forwards downstream notifications as `codex/event` with an opaque JSON payload; approvals are relayed as requests and require a decision within a timeout.
 
 Notes on binary discovery
-- Docs mention falling back to `codex-test`, but current code resolves `CODEX_BIN` or defaults to `codex`. If relying on a test/stub, set `CODEX_BIN` explicitly.
+- If relying on a test/stub, set `CODEX_BIN` explicitly.
 
 Compatibility checklist
 - Params: send JSON objects, not strings.

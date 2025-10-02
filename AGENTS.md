@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- `lsp/` — Rust MCP↔LSP bridge (stubbed LSP calls). Binary crate `codex-lsp`.
+- `lsp/` — Rust MCP↔LSP bridge (stubbed LSP calls). Binary crate `mcp-lsp`.
 - `lsif/` — 
 - `dap/` — 
 - `orchestrator/` — Rust MCP orchestrator. Binary crate `codex-orchestrator`.
@@ -10,7 +10,7 @@
 ## Build, Test, and Development Commands
 - Build (workspace): `cargo build --release`
 - Run (stdio MCP):
-  - LSP bridge: `cargo run -p codex-lsp`
+  - LSP bridge: `cargo run -p mcp-lsp`
   - Orchestrator: `cargo run -p codex-orchestrator`
 - Test: `cargo test` (workspace)
 

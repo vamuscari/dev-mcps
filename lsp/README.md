@@ -1,4 +1,4 @@
-# codex-lsp
+# mcp-lsp
 
 Minimal JSON‑RPC 2.0 bridge with a small, spec‑aligned LSP surface to enable editor/tool integration. The binary reads and writes framed JSON messages on stdin/stdout and currently focuses on correct LSP lifecycle and text document synchronization.
 
@@ -30,7 +30,7 @@ They target the [Codex](https://github.com/openai/codex) toolchain and are only 
 
 ## LSIF Support
 
-LSIF functionality has moved into a dedicated MCP server: `codex-lsif` (see `lsif/`). Use that server for LSIF tools such as `lsif_load`, `lsif_definition`, and `lsif_references`.
+LSIF functionality has moved into a dedicated MCP server: `mcp-lsif` (see `lsif/`). Use that server for LSIF tools such as `lsif_load`, `lsif_definition`, and `lsif_references`.
 
 ### What’s notable in 3.18
 

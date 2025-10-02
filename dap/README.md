@@ -1,4 +1,4 @@
-# codex-dap
+# mcp-dap
 
 Minimal MCP↔DAP (Debug Adapter Protocol) bridge. The binary reads/writes framed JSON on stdin/stdout using `Content-Length` headers and exposes a small set of `dap_*` MCP tools for driving a debug adapter.
 
@@ -16,8 +16,8 @@ Minimal MCP↔DAP (Debug Adapter Protocol) bridge. The binary reads/writes frame
 `tools/list` probes adapter capabilities (via `initialize`) and filters a few gated tools (e.g., `dap_configuration_done`).
 
 ## Build, Run, Test
-- Build: `cargo build -p codex-dap`
-- Run: `cargo run -p codex-dap`
-- Test: `cargo test -p codex-dap`
+- Build: `cargo build -p mcp-dap`
+- Run: `cargo run -p mcp-dap`
+- Test: `cargo test -p mcp-dap`
 
 This is a minimal, request/response bridge. Adapter events are currently ignored in responses; future work may surface them as notifications.

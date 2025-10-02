@@ -19,3 +19,20 @@ authors = ["Codex Team"]
 [workspace.dependencies]
 rmcp = { version = "0.7.0" }
 rmcp-macros = { version = "0.7.0" }
+base64 = "0.22"
+icu_decimal = "2"
+icu_locale_core = { version = "2.0.0-beta2" }
+mcp-types = "0.1"
+mime_guess = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+serde_with = { version = "3", features = ["macros", "base64"] }
+strum = "0.26"
+strum_macros = "0.26"
+sys-locale = "0.3"
+tracing = "0.1"
+ts-rs = { version = "10", default-features = false, features = ["uuid-impl", "serde-json-impl", "no-serde-warnings"] }
+uuid = { version = "1", features = ["serde", "v7"] }
+anyhow = "1"
+pretty_assertions = "1"
+tempfile = "3"

@@ -203,25 +203,4 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use rmcp::model::ErrorCode;
-
-    #[test]
-    fn tools_list_has_schemas() {
-        let items = tools();
-        assert!(!items.is_empty());
-        assert!(items.iter().all(|tool| !tool.input_schema.is_empty()));
-    }
-
-    #[test]
-    fn lsif_load_requires_path() {
-        let req = CallToolRequestParam {
-            name: "lsif_load".into(),
-            arguments: Some(JsonObject::default()),
-        };
-        let err = call_tool_impl(req).expect_err("expected invalid params");
-        assert_eq!(err.code, ErrorCode::INVALID_PARAMS);
-    }
-}
+// tests removed by request

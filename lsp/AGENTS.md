@@ -1,7 +1,7 @@
 # Repository Guidelines
 
 ## Project Structure & Module Organization
-- Rust binary crate (`codex-lsp`). Entry: `src/main.rs`.
+- Rust binary crate (`mcp-lsp`). Entry: `src/main.rs`.
 - Framing utilities: `src/framed.rs` (Content-Length based message IO).
 - JSON‑RPC types: `src/rpc.rs` (requests, responses, errors, tool structs).
 - Add modules under `src/<module>.rs` and register with `mod <module>;` in `src/main.rs`. Keep modules small and purpose‑driven.

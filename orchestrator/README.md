@@ -7,7 +7,7 @@ each agent via simple JSON messages.
 ## Usage Flow
 - Spawn an agent with `spawn_agent` → receive `agentId`.
 - Start a conversation with `new_conversation { agentId, params }`.
-- Send messages with `send_user_message { agentId, params }`.
+- Send messages with `send_user_message` or `send_user_turn`.
 - Optionally `interrupt` an in-flight conversation.
 - Use `list_agents` to inspect and `kill_agent` to terminate.
 
@@ -17,10 +17,22 @@ Notes
   and `message` (string). As a convenience, `new_conversation` also accepts
   `topic` or `message` as an alias for `prompt`, and `send_user_message` accepts
   `prompt` as an alias for `message`.
-- Codex events (including approvals) are relayed as rmcp logging notifications
-  `notifications/message` with logger `codex/event`.
-- Set `CODEX_BIN` to override the agent binary; defaults to `codex` or
-  `codex-test` if found on `PATH`.
+- **IMPORTANT**: `new_conversation` only creates conversation metadata. The Codex agent
+  does NOT process the initial prompt automatically. You MUST call `send_user_turn`
+  or `send_user_message` after `new_conversation` to trigger agent processing and get responses.
+- **Agent Responses & Events**: Codex agent responses and events are sent as MCP notifications
+  (`notifications/message`) with logger `codex/event`. These notifications include:
+  - Agent text responses
+  - Tool calls and results
+  - Approval requests (`kind: "approval_request"`)
+  - Other agent events
+
+  **Note**: MCP clients may not display these notifications by default. To see agent responses,
+  you need to either:
+  1. Configure your MCP client to display/log notifications with logger `codex/event`
+  2. Poll the conversation rollout files directly (see `list_conversations` for paths)
+  3. Implement a custom notification handler in your client
+- Set `CODEX_BIN` to override the agent binary; defaults to `codex` on `PATH`.
 
 ## Tools
 - `spawn_agent`
@@ -38,9 +50,30 @@ Notes
 - `send_user_message`
   - Description: Forwarded to the agent as `sendUserMessage`.
   - Args: `{ agentId: string, params?: object }`
+- `send_user_turn`
+  - Description: Forwarded to the agent as `sendUserTurn`. Auto-fills required fields with sensible defaults.
+  - Args: `{ agentId: string, params?: object | string }`
+  - Required in params: `conversationId` (or inferred from last conversation), `text` or `items`
+  - Auto-filled if missing: `cwd` (current dir), `approvalPolicy` ("never"), `sandboxPolicy` (read-only), `model` ("gpt-4"), `summary` ("auto")
 - `interrupt`
   - Description: Forwarded as `interruptConversation` (if supported by the agent).
   - Args: `{ agentId: string, params?: object }`
+- `list_conversations`
+  - Description: List recorded Codex conversations (rollouts) with optional pagination.
+  - Args: `{ agentId: string, params?: { pageSize?: number, cursor?: string } }`
+  - Result: `{ items: [{ conversationId, path, preview, timestamp }], nextCursor?: string }`
+- `resume_conversation`
+  - Description: Resume a recorded Codex conversation from a rollout file.
+  - Args: `{ agentId: string, params: { path: string, overrides?: object } }`
+  - Result: `{ conversationId, model, initialMessages?: [...] }`
+- `archive_conversation`
+  - Description: Archive (mark as finished) a Codex conversation.
+  - Args: `{ agentId: string, params: { conversationId: string } }`
+  - Result: `{ ok: true }`
+- `get_conversation_events`
+  - Description: Read events from a conversation rollout file (useful when notifications aren't visible).
+  - Args: `{ rolloutPath: string, limit?: number }`
+  - Result: `{ events: [...], count: number }`
 
 ### Approvals
 - Overview
@@ -71,10 +104,21 @@ Notes
   - Args: `{ "agentId": "dev-agent", "params": { "conversationId": "c1", "message": "hello" } }`
 - Interrupt a conversation
   - Args: `{ "agentId": "dev-agent", "params": { "conversationId": "c1" } }`
+- List conversations
+  - Args: `{ "agentId": "dev-agent", "params": { "pageSize": 10 } }`
+  - Result: `{ "items": [{ "conversationId": "c1", "path": "/path/to/rollout.jsonl", "preview": "Review dap...", "timestamp": "2024-01-01T12:00:00Z" }] }`
+- Resume a conversation
+  - Args: `{ "agentId": "dev-agent", "params": { "path": "/path/to/rollout.jsonl" } }`
+  - Result: `{ "conversationId": "c1", "model": "gpt-4" }`
+- Archive a conversation
+  - Args: `{ "agentId": "dev-agent", "params": { "conversationId": "c1" } }`
+  - Result: `{ "ok": true }`
+- Get conversation events (poll for agent responses)
+  - Args: `{ "rolloutPath": "/Users/user/.codex/sessions/2024/01/01/rollout-c1.jsonl", "limit": 20 }`
+  - Result: `{ "events": [...], "count": 20 }`
 
 ## Configuration
-- `CODEX_BIN` — Override the command used to spawn agents. Defaults to `codex` or
-  `codex-test` when available on `PATH`.
+- `CODEX_BIN` — Override the command used to spawn agents. Defaults to `codex` when available on `PATH`.
 
 ## Build, Run, Test
 - Build: `cargo build -p codex-orchestrator`
